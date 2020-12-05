@@ -1,7 +1,29 @@
 from bloom import Bloom
+from model import Net, train
 from random import random
- 
-def bloom_test(n, e):
+import torch as T
+
+def make_exs(n, m):
+    """
+    n is dims for x
+    m is number of exs
+    """
+    present = {T.rand(1,n) for _ in range(m//2)}    
+    absent = {T.rand(1,n) for _ in range(m//2)}
+    exs = ([(x, T.tensor([[1]], dtype=T.bool)) for x in present] + 
+           [(x, T.tensor([[0]], dtype=T.bool)) for x in absent])
+
+    # TODO: clean up to avoid iterating repeatedly
+    return ([ex[0] for ex in exs], [ex[1] for ex in exs])
+    
+def model_test(n, m):
+    net = Net(n)
+    xs, ys = make_exs(n, m)
+    train(net, xs, ys, 1)
+
+    # TODO
+
+def bloom_test(n, e, test):
 
     bloom = Bloom(n, e)
 
@@ -37,7 +59,7 @@ def bloom_test(n, e):
 if __name__ == '__main__':
     n = 10000 # number of items to add
     e = 0.01 # false positive probability
-    fpr, fnr = bloom_test(n, e)
-
-    print("f_pos rate={}, f_neg rate={}".format(fpr, fnr))
+    # fpr, fnr = bloom_test(n, e, [])
+    # print("f_pos rate={}, f_neg rate={}".format(fpr, fnr))
+    model_test(n, 5)
 
