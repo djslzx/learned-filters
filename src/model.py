@@ -1,4 +1,6 @@
 # https://medium.com/dair-ai/a-simple-neural-network-from-scratch-with-pytorch-and-google-colab-c7f3830618e0
+# https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module
+
 import torch
 import torch.nn as nn
 
