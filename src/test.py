@@ -8,12 +8,13 @@ def make_exs(n, m):
     n is dims for x
     m is number of exs
     """
-    return T.rand(m,n), T.randint(2,(m,1), dtype=T.float)
+    return (T.randint(10, (m,n), dtype=T.float)/10,
+            T.randint(2,(m,1), dtype=T.float))
     
-def model_test(n, m):
+def model_test(n, m, epochs):
     net = Net(n)
     xs, ys = make_exs(n, m)
-    train(net, xs, ys, 2)
+    train(net, xs, ys, epochs)
 
     correct = 0
     for x,y in zip(xs,ys):
@@ -22,8 +23,8 @@ def model_test(n, m):
     print("correct: {}, incorrect: {}, correct%: {}"
           .format(correct, m-correct, correct/m))
 
-def bloom_test(n, e, test):
-
+def bloom_test(n, e):
+    xs, ys = make_exs(n,m)
     bloom = Bloom(n, e)
 
     print("Size of bit array: {}".format(bloom.m))
@@ -60,5 +61,5 @@ if __name__ == '__main__':
     e = 0.01 # false positive probability
     # fpr, fnr = bloom_test(n, e, [])
     # print("f_pos rate={}, f_neg rate={}".format(fpr, fnr))
-    model_test(n, 5)
+    model_test(n, m=10, epochs=1)
 
