@@ -8,20 +8,19 @@ def make_exs(n, m):
     n is dims for x
     m is number of exs
     """
-    present = {T.rand(1,n) for _ in range(m//2)}    
-    absent = {T.rand(1,n) for _ in range(m//2)}
-    exs = ([(x, T.tensor([[1]], dtype=T.bool)) for x in present] + 
-           [(x, T.tensor([[0]], dtype=T.bool)) for x in absent])
-
-    # TODO: clean up to avoid iterating repeatedly
-    return ([ex[0] for ex in exs], [ex[1] for ex in exs])
+    return T.rand(m,n), T.randint(2,(m,1), dtype=T.float)
     
 def model_test(n, m):
     net = Net(n)
     xs, ys = make_exs(n, m)
-    train(net, xs, ys, 1)
+    train(net, xs, ys, 2)
 
-    # TODO
+    correct = 0
+    for x,y in zip(xs,ys):
+        print(x, net(x) > 0.5, y)
+        correct += int((net(x) > 0.5) == y)
+    print("correct: {}, incorrect: {}, correct%: {}"
+          .format(correct, m-correct, correct/m))
 
 def bloom_test(n, e, test):
 

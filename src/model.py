@@ -17,7 +17,7 @@ class Net(nn.Module):
         return x
 
 def train(net, xs, ys, epochs):
-    criterion = nn.CrossEntropyLoss
+    criterion = nn.MSELoss()
     optimizer = T.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     dataloader = T.utils.data.TensorDataset(xs, ys)
 
@@ -25,13 +25,13 @@ def train(net, xs, ys, epochs):
         running_loss = 0.0
         for i, data in enumerate(dataloader, 1):
             x, y = data
+            print("x:{}, y:{}".format(x, y))
 
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
+            loss = criterion(net(x), y)
             loss.backward()
             optimizer.step()
 
