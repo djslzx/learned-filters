@@ -1,85 +1,82 @@
-from model import Net
-from bloom import Bloom
+from word import Word
+from model import WordNet
+from bloom import WordBloom
 from toast import Toast
-from random import random
+from util import shuffled
 import torch as T
 
-def make_exs(m, n):
+def make_exs(num_pos, num_neg, n, c):
     """
-    n is dims for x
     m is number of exs
     """
-    return (T.randint(10, (m,n), dtype=T.float)/10,
-            T.randint(2,(m,1), dtype=T.float))
-    
-def toast_test(m, n, c, err, epochs):
-    toast = Toast(n, c, err)
-    xs, ys = make_exs(m, n*c)
-    # pos_indices = T.nonzero(T.reshape(ys, (-1,))).squeeze()
-    # neg_indices = T.nonzero(T.reshape(~ys.bool(), (-1, ))).squeeze()
-    # positives = xs[pos_indices]
-    # negatives = xs[neg_indices]
+    xs = [Word(n, c) for _ in range(num_pos + num_neg)]
+    ys = ([0 for _ in range(num_pos)] + 
+          [1 for _ in range(num_neg)])
 
-    # toast.train(positives, negatives, epochs)
+    return xs, shuffled(ys)
+    
+def toast_test(num_pos, num_neg, n, c, err, epochs):
+    toast = Toast(n, c, err)
+    xs, ys = make_exs(num_pos, num_neg, n, c)
     toast.train(xs, ys, epochs)
 
-    correct = 0
+    false_pos = false_neg = 0
     for x,y in zip(xs,ys):
-        correct += int(toast.contains(x) == bool(y))
-    print("correct: {}, incorrect: {}, correct%: {}"
-          .format(correct, m-correct, correct/m))
+        filter_contains = bool(toast.contains(x))
+        false_pos += not y and filter_contains
+        false_neg += y and not filter_contains
 
-def model_test(m, n, epochs):
-    net = Net(n)
-    xs, ys = make_exs(m, n)
+    print(toast)
+    print("fpr: {}, fnr: {}, correct%: {}"
+          .format(false_pos/num_neg, 
+                  false_neg/num_pos, 
+                  1 - (false_pos + false_neg)/(num_pos + num_neg)))
+
+def model_test(num_pos, num_neg, n, c, epochs):
+    net = WordNet(n, c)
+    xs, ys = make_exs(num_pos, num_neg, n, c)
     net.train(xs, ys, epochs)
 
-    correct = 0
+    false_pos = false_neg = 0
     for x,y in zip(xs,ys):
-        print(x, net(x) > 0.5, y)
-        correct += int((net(x) > 0.5) == y)
-    print("correct: {}, incorrect: {}, correct%: {}"
-          .format(correct, m-correct, correct/m))
+        model_contains = bool(net(x) > 0.5) #FIXME
+        false_pos += not y and model_contains
+        false_neg += y and not model_contains
 
-def bloom_test(m, n, e):
-    xs, ys = make_exs(m, n)
-    bloom = Bloom(n, e)
+    print("fpr: {}, fnr: {}, correct%: {}"
+          .format(false_pos/num_neg, 
+                  false_neg/num_pos, 
+                  1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
-    print("Size of bit array: {}".format(bloom.m))
-    print("False positive probability: {}".format(bloom.e))
-    print("Number of hash functions: {}".format(bloom.k))
- 
-    present = {str(random()) for _ in range(n)}
-    absent = {str(random()) for _ in range(n)}
+def bloom_test(num_pos, num_neg, n, c, e):
+    bloom = WordBloom(num_pos, e) 
+    xs, ys = make_exs(num_pos, num_neg, n, c)
 
-    for item in present:
-        bloom.add(item)
+    positives = [x for x,y in zip(xs,ys) if y]
+    bloom.add_set(positives)
 
-    # Count false pos/neg
-    f_pos = f_neg = t_pos = t_neg = 0
-    for x in present:
-        if bloom.contains(x):
-            t_pos += 1
-        else:
-            f_neg += 1
-    for x in absent:
-        if bloom.contains(x):
-            f_pos += 1
-        else:
-            t_neg += 1
+    false_pos = false_neg = 0
+    for x,y in zip(xs,ys):
+        filter_contains = bloom.contains(x)
+        false_pos += not y and filter_contains
+        false_neg += y and not filter_contains
 
-    f_pos_rate = f_pos/(t_pos + f_pos)
-    f_neg_rate = f_neg/(t_neg + f_neg)
-
-    return f_pos_rate, f_neg_rate
-
+    print(bloom)
+    print("fpr: {}, fnr: {}, correct%: {}"
+          .format(false_pos/num_neg, 
+                  false_neg/num_pos, 
+                  1 - (false_pos + false_neg)/(num_pos + num_neg)))
  
 if __name__ == '__main__':
-    # n = 10000 # number of items to add
-    # e = 0.01 # false positive probability
-    # fpr, fnr = bloom_test(n, e, [])
-    # print("f_pos rate={}, f_neg rate={}".format(fpr, fnr))
-    # model_test(n, m=10, epochs=1)
-    toast_test(m=10, n=5, c=10, err=0.01, epochs=5)
+    num_pos = 100
+    num_neg = 100
 
-
+    print("Running Bloom test...")
+    bloom_test(num_pos, num_neg, n=5, c=10, e=0.01)
+    print("Done.")
+    # print("Running model test...")
+    # model_test(num_pos, num_neg, n=5, c=10, epochs=1000)
+    # print("Done.")
+    print("Running toast test...")
+    toast_test(num_pos, num_neg, n=5, c=10, err=0.01, epochs=500)
+    print("Done")

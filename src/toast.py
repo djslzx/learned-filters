@@ -9,8 +9,8 @@
       no-> user
 """
 
-from bloom import Bloom
-from model import Net
+from bloom import WordBloom
+from model import WordNet
 import torch as T
 
 class Toast(object):
@@ -20,7 +20,7 @@ class Toast(object):
         n: number of letters in string
         c: size of alphabet
         """
-        self.model = Net(n*c)
+        self.model = WordNet(n, c)
         self.tau = tau # TODO: tune
 
         # AMQ can only be set up after training model
@@ -30,15 +30,6 @@ class Toast(object):
     def train(self, xs, ys, epochs):
         # Train neural net
         # Note: torch dataloader takes care of shuffling
-        # print("pos:", positives)
-        # print("neg:", negatives)
-
-        # xs = T.cat((positives, negatives))
-        # ys = T.cat((T.ones(positives.size()),
-        #             T.zeros(negatives.size())))
-
-        print("xs:", xs)
-        print("ys:", ys)
         self.model.train(xs, ys, epochs)
 
         # Get false negatives
@@ -47,14 +38,17 @@ class Toast(object):
                       if not self.model(x) > self.tau]
         
         # Build filter for negatives
-        self.amq = Bloom(len(false_negs), self.err)
-        self.amq.add_set(false_negs)
+        if len(false_negs) > 0:
+            self.amq = WordBloom(len(false_negs), self.err)
+            self.amq.add_set(false_negs)
 
     def contains(self, x):
-        # Uses logical short-circuiting to check
-        # amq only if model reports negative
-        return (self.model(x) > self.tau or
-                self.amq.contains(x))
+        # Check amq only if model reports negative and model has false negatives
+        model_ans = self.model(x) > self.tau
+        if model_ans or self.amq is None:
+            return model_ans
+        else:
+            return self.amq.contains(x)
 
     def __str__(self):
-        pass
+        return "amq: {}, e={}".format(self.amq, self.err)

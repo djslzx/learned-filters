@@ -44,6 +44,24 @@ class Net(nn.Module):
 
         print('Finished Training')
 
+class WordNet():
+    
+    def __init__(self, n, c):
+        self.n = n
+        self.c = c
+        self.net = Net(n*c)
+
+    def train(self, xs, ys, epochs):
+        # Reformat xs from list of Words to 2D tensor 
+        train_xs = T.stack([x.model_type for x in xs])
+        # Reformat ys from list of 1/0s to column tensor
+        train_ys = T.tensor(ys, dtype=T.float).reshape((-1,1))
+        self.net.train(train_xs, train_ys, epochs)
+
+    def __call__(self, x):
+        return self.net(x.model_type)
+
+
 if __name__ == '__main__':
     random_data = T.rand([1,5])
     net = Net(n=5)

@@ -25,6 +25,7 @@ class Word(object):
         t[x] = 1
         return t
 
+    @property
     def model_type(self):
         """
         Returns the word as a 1x(nc) tensor
@@ -32,6 +33,7 @@ class Word(object):
         return T.cat(tuple(self._val_to_tensor(x) 
                            for x in self.data))
 
+    @property
     def filter_type(self):
         """
         Returns the word as a string of n letters
@@ -46,5 +48,5 @@ class Word(object):
 if __name__ == '__main__':
     w = Word(3, 2)
     print(w)
-    print(w.model_type())
-    print(w.filter_type())
+    print(w.model_type)
+    print(w.filter_type)

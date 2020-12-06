@@ -7,7 +7,7 @@ Requires `bitarray`, `mmh3`, `torch`
 ## Approach
 ### Filter architectures
 - [x] Bloom filter
-- [ ] Open sandwich bloom filter (Kraska)
+- [x] Open sandwich bloom filter (Kraska)
 - [ ] Sandwiched bloom filter (Mitzenmacher)
 - [ ] Model-hash bloom filter (Kraska)
 
@@ -40,6 +40,8 @@ U - K is the set of negatives
 
 Can easily convert 'real' numbers by using C=10, converting each number's decimal place to a letter in [0..9]
 
+We handle these conversions by adding a Word type, along with WordNet and WordBloom wrappers for Net and Bloom, respectively.
+
 ### Open-faced sandwich (Kraska)
 0. Generate training/test sets
    - training set: all positives, some negatives sampled from negative distribution (90%)
@@ -65,6 +67,11 @@ Take matrices, count num elts, mult by size of individual elt
 - Which negative distributions should we expect to do the best on? Uniform?
 
 ## TODO
-- [ ] Build overflow Bloom filter
-- [ ] Testing rig (setup sending different inputs to model vs filter)
+- [x] Build overflow Bloom filter
+- [x] Testing rig (setup sending different inputs to model vs filter)
 - [ ] Sandwich
+- [ ] Tuning
+  - figure out how to get models in sandwiches to perform well enough
+    to not make filter worse
+  - tuning tau gets fpr under desired threshold
+- [ ] saving models and making deterministic inputs (so we can reuse models)

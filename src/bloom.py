@@ -2,7 +2,7 @@ from bitarray import bitarray
 from math import log, log2
 import mmh3 
 
-class Bloom(object):
+class Bloom:
     """
     A Bloom filter holding 
       - `n` elements,
@@ -62,4 +62,21 @@ class Bloom(object):
         return True
 
     def __str__(self):
-        return str(self.bits)
+        return ("n={}, e={}, m={}, k={}"
+                .format(self.n, self.e, self.m, self.k))
+
+class WordBloom:
+    
+    def __init__(self, n, e):
+        self.n = n
+        self.e = e
+        self.bloom = Bloom(n,e)
+
+    def add_set(self, elts):
+        self.bloom.add_set([x.filter_type for x in elts])
+
+    def contains(self, x):
+        return self.bloom.contains(x.filter_type)
+
+    def __str__(self):
+        return str(self.bloom)
