@@ -1,9 +1,10 @@
+from model import Net
 from bloom import Bloom
-from model import Net, train
+from toast import Toast
 from random import random
 import torch as T
 
-def make_exs(n, m):
+def make_exs(m, n):
     """
     n is dims for x
     m is number of exs
@@ -11,10 +12,27 @@ def make_exs(n, m):
     return (T.randint(10, (m,n), dtype=T.float)/10,
             T.randint(2,(m,1), dtype=T.float))
     
-def model_test(n, m, epochs):
+def toast_test(m, n, c, err, epochs):
+    toast = Toast(n, c, err)
+    xs, ys = make_exs(m, n*c)
+    # pos_indices = T.nonzero(T.reshape(ys, (-1,))).squeeze()
+    # neg_indices = T.nonzero(T.reshape(~ys.bool(), (-1, ))).squeeze()
+    # positives = xs[pos_indices]
+    # negatives = xs[neg_indices]
+
+    # toast.train(positives, negatives, epochs)
+    toast.train(xs, ys, epochs)
+
+    correct = 0
+    for x,y in zip(xs,ys):
+        correct += int(toast.contains(x) == bool(y))
+    print("correct: {}, incorrect: {}, correct%: {}"
+          .format(correct, m-correct, correct/m))
+
+def model_test(m, n, epochs):
     net = Net(n)
-    xs, ys = make_exs(n, m)
-    train(net, xs, ys, epochs)
+    xs, ys = make_exs(m, n)
+    net.train(xs, ys, epochs)
 
     correct = 0
     for x,y in zip(xs,ys):
@@ -23,8 +41,8 @@ def model_test(n, m, epochs):
     print("correct: {}, incorrect: {}, correct%: {}"
           .format(correct, m-correct, correct/m))
 
-def bloom_test(n, e):
-    xs, ys = make_exs(n,m)
+def bloom_test(m, n, e):
+    xs, ys = make_exs(m, n)
     bloom = Bloom(n, e)
 
     print("Size of bit array: {}".format(bloom.m))
@@ -57,9 +75,11 @@ def bloom_test(n, e):
 
  
 if __name__ == '__main__':
-    n = 10000 # number of items to add
-    e = 0.01 # false positive probability
+    # n = 10000 # number of items to add
+    # e = 0.01 # false positive probability
     # fpr, fnr = bloom_test(n, e, [])
     # print("f_pos rate={}, f_neg rate={}".format(fpr, fnr))
-    model_test(n, m=10, epochs=1)
+    # model_test(n, m=10, epochs=1)
+    toast_test(m=10, n=5, c=10, err=0.01, epochs=5)
+
 

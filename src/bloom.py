@@ -31,6 +31,8 @@ class Bloom(object):
         k = -log2(e)
         return int(k)
 
+    # TODO: change to take in given size,
+    # figure out other params based on that
     def __init__(self, n, e):
         self.n = n
         self.e = e
@@ -45,6 +47,10 @@ class Bloom(object):
         """
         for i in range(self.k):
             self.bits[mmh3.hash(x,i) % self.m] = True
+
+    def add_set(self, elts):
+        for elt in elts:
+            self.add(elt)
 
     def contains(self, x):
         """
