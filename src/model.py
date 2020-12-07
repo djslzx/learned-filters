@@ -51,6 +51,7 @@ class Net(nn.Module):
                 #           (epoch, i, running_loss / 2000))
                 #     running_loss = 0.0
 
+        # https://pytorch.org/tutorials/beginner/saving_loading_models.html
         T.save(self.state_dict(), "Model")
         print('Finished Training')
 
