@@ -17,7 +17,7 @@ def make_uniform_exs(num_exs, n, c):
     
 def make_sum_exs(num_exs, n, c):
     """
-    Generate examples that are linearly separable
+    Generate examples that are linearly separable based on element-wise sum
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []
@@ -31,7 +31,7 @@ def make_sum_exs(num_exs, n, c):
 
 def make_parity_exs(num_exs, n, c):
     """
-    Generate examples that are checkerboard-like
+    Generate examples that are checkerboard-like based on parity
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []
@@ -45,7 +45,7 @@ def make_parity_exs(num_exs, n, c):
 
 def make_circle_exs(num_exs, n, c):
     """
-    Generate examples that are linearly separable
+    Generate examples that are linearly separable based on a circle
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []

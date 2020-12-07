@@ -4,7 +4,7 @@ Define the input type that will be used for both filters and ML models
 
 import torch as T
 
-class Word(object):
+class Word:
     """
     A representation for a word of n letters
     where letters are from an alphabet of size c
@@ -17,7 +17,7 @@ class Word(object):
     
     def _val_to_tensor(self, x):
         """
-        Maps the value x to a 1xc tensor where
+        Maps the value x to a 1 x c tensor where
         all values are 0 except for the x-th value,
         which is 1
         """
@@ -28,7 +28,7 @@ class Word(object):
     @property
     def model_type(self):
         """
-        Returns the word as a 1x(nc) tensor
+        Returns the word as a 1 x (nc) tensor
         """
         return T.cat(tuple(self._val_to_tensor(x) 
                            for x in self.data))

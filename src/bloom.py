@@ -73,9 +73,15 @@ class WordBloom:
         self.bloom = Bloom(n,e)
 
     def add_set(self, elts):
+        """
+        Add set of elements to the filter
+        """
         self.bloom.add_set([x.filter_type for x in elts])
 
     def contains(self, x):
+        """
+        Check if x is in the filter
+        """
         return self.bloom.contains(x.filter_type)
 
     def __str__(self):

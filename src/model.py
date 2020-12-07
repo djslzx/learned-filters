@@ -6,17 +6,26 @@ import torch.nn as nn
 class Net(nn.Module):
 
     def __init__(self, n):
+        """
+        Simple Neural Net with 1 hidden layer
+        """
         super(Net, self).__init__()
         hidden_size = (n+1)//2  # Use avg of 2 layer sizes
         self.w1 = nn.Linear(n, hidden_size)  
         self.w2 = nn.Linear(hidden_size, 1)
 
     def forward(self, x):
+        """
+        Performs Forward Propagation
+        """
         x = T.sigmoid(self.w1(x))
         x = T.sigmoid(self.w2(x))
         return x
 
     def train(self, xs, ys, epochs):
+        """
+        Train on examples for a certain number of epochs
+        """
         criterion = nn.BCELoss()    # Binary cross entropy
         optimizer = T.optim.SGD(self.parameters(), 
                                 lr=0.001, 
@@ -42,6 +51,7 @@ class Net(nn.Module):
                 #           (epoch, i, running_loss / 2000))
                 #     running_loss = 0.0
 
+        T.save(self.state_dict(), "Model")
         print('Finished Training')
 
 class WordNet():
