@@ -13,9 +13,8 @@ import torch as T
 from bloom import WordBloom
 from model import WordNet
 from util import ilen
-from itertools import takewhile
 
-class Toast(object):
+class Toast:
 
     def __init__(self, n, c, err, tau=0.5):
         """
