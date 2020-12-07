@@ -2,22 +2,64 @@ from word import Word
 from model import WordNet
 from bloom import WordBloom
 from toast import Toast
-from util import shuffled
+from util import shuffled, ilen
 import torch as T
 
-def make_exs(num_pos, num_neg, n, c):
+def make_uniform_exs(num_exs, n, c):
     """
-    m is number of exs
+    Generate examples that are uniformly randomly labeled
     """
-    xs = [Word(n, c) for _ in range(num_pos + num_neg)]
-    ys = ([0 for _ in range(num_pos)] + 
-          [1 for _ in range(num_neg)])
+    xs = [Word(n, c) for _ in range(num_exs)]
+    ys = ([0 for _ in range(num_exs/2)] + 
+          [1 for _ in range(num_exs/2)])
 
     return xs, shuffled(ys)
     
-def toast_test(num_pos, num_neg, n, c, err, epochs):
+def make_sum_exs(num_exs, n, c):
+    """
+    Generate examples that are linearly separable
+    """
+    xs = [Word(n, c) for _ in range(num_exs)]
+    ys = []
+    for x in xs:
+        tensor = x.data
+        label = float(T.sum(tensor)) < (n*c/2)
+        # print(tensor, label)
+        ys.append(label)
+
+    return xs, ys
+
+def make_parity_exs(num_exs, n, c):
+    """
+    Generate examples that are checkerboard-like
+    """
+    xs = [Word(n, c) for _ in range(num_exs)]
+    ys = []
+    for x in xs:
+        tensor = x.data
+        label = int(T.sum(tensor)) % 2 == 0
+        # print(tensor, label)
+        ys.append(label)
+
+    return xs, ys
+
+def make_circle_exs(num_exs, n, c):
+    """
+    Generate examples that are linearly separable
+    """
+    xs = [Word(n, c) for _ in range(num_exs)]
+    ys = []
+    half_len = n*c/2
+    center = T.tensor([half_len, half_len])
+    for x in xs:
+        tensor = x.data
+        label = float(T.dist(T.sum(tensor), center)) < half_len/4
+        ys.append(label)
+
+    return xs, ys
+
+def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
     toast = Toast(n, c, err)
-    xs, ys = make_exs(num_pos, num_neg, n, c)
     toast.train(xs, ys, epochs)
 
     false_pos = false_neg = 0
@@ -32,9 +74,8 @@ def toast_test(num_pos, num_neg, n, c, err, epochs):
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
-def model_test(num_pos, num_neg, n, c, epochs):
+def model_test(xs, ys, num_pos, num_neg, n, c, epochs):
     net = WordNet(n, c)
-    xs, ys = make_exs(num_pos, num_neg, n, c)
     net.train(xs, ys, epochs)
 
     false_pos = false_neg = 0
@@ -48,9 +89,8 @@ def model_test(num_pos, num_neg, n, c, epochs):
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
-def bloom_test(num_pos, num_neg, n, c, e):
+def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
     bloom = WordBloom(num_pos, e) 
-    xs, ys = make_exs(num_pos, num_neg, n, c)
 
     positives = [x for x,y in zip(xs,ys) if y]
     bloom.add_set(positives)
@@ -68,15 +108,26 @@ def bloom_test(num_pos, num_neg, n, c, e):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
  
 if __name__ == '__main__':
-    num_pos = 100
-    num_neg = 100
+    num_exs = 1000
+    epochs = 100
+    n=5
+    c=10
+
+    # xs, ys = make_uniform_exs(num_exs, n, c)
+    xs, ys = make_sum_exs(num_exs, n, c)
+    # xs, ys = make_parity_exs(num_exs, n, c)
+    # xs, ys = make_circle_exs(num_exs, n, c)
+    num_pos = ilen(x for x,y in zip(xs,ys) if y)
+    num_neg = ilen(x for x,y in zip(xs,ys) if not y)
+
+    print("pos: {}, neg: {}".format(num_pos, num_neg))
 
     print("Running Bloom test...")
-    bloom_test(num_pos, num_neg, n=5, c=10, e=0.01)
+    bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=0.01)
     print("Done.")
     # print("Running model test...")
     # model_test(num_pos, num_neg, n=5, c=10, epochs=1000)
     # print("Done.")
     print("Running toast test...")
-    toast_test(num_pos, num_neg, n=5, c=10, err=0.01, epochs=500)
+    toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
     print("Done")

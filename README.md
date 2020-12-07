@@ -62,6 +62,13 @@ Take matrices, count num elts, mult by size of individual elt
   - One where the modeling assumption of consistent distribution for negative queries is met,
   - One where this assumption is not met
 
+## Hyperparameters
+- heuristic for choosing tau
+- training time/epochs
+- neural net hyperparams
+- ML model
+
+
 ## Lingering questions
 - How much do we train the neural net / pre-filter?
 - Which negative distributions should we expect to do the best on? Uniform?

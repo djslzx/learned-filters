@@ -25,7 +25,7 @@ class Net(nn.Module):
         dataloader = T.utils.data.DataLoader(dataset, shuffle=True)
 
         for epoch in range(1, epochs+1):
-            running_loss = 0.0
+            # running_loss = 0.0
             for i, (x,y) in enumerate(dataloader, 1):
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -35,12 +35,12 @@ class Net(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # print statistics
-                running_loss += loss.item()
-                if i % 2000 == 0:    # print every 2000 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                          (epoch, i, running_loss / 2000))
-                    running_loss = 0.0
+                # # print statistics
+                # running_loss += loss.item()
+                # if i % 1000 == 0:
+                #     print('[%d, %5d] loss: %.3f' %
+                #           (epoch, i, running_loss / 2000))
+                #     running_loss = 0.0
 
         print('Finished Training')
 
