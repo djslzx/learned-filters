@@ -16,13 +16,13 @@ from util import ilen
 
 class Toast:
 
-    def __init__(self, n, c, err, tau=0.5):
+    def __init__(self, n, c, err):
         """
         n: number of letters in string
         c: size of alphabet
         """
         self.model = WordNet(n, c)
-        self.tau = tau # TODO: tune
+        self.tau = 0.5
 
         # AMQ can only be set up after training model
         self.amq = None
@@ -68,7 +68,7 @@ class Toast:
 
         # If no tau has fpr < err/2, choose tau with best fpr
         if not candidates:
-            print("tau={}, fpr={}, fnr={}".format(best_fpr_tau, best_fpr, fnr(tau)))
+            print("tau={}, fpr={}, fnr={}".format(best_fpr_tau, best_fpr, fnr(best_fpr_tau)))
             return best_fpr_tau
         # Otherwise, choose tau in candidates with best fnr
         else:
@@ -79,7 +79,7 @@ class Toast:
                 if fn_rate < best_fnr:
                     best_fnr_tau = tau
                     best_fnr = fn_rate
-            print("tau={}, fpr={}, fnr={}".format(best_fnr_tau, fpr(tau), best_fnr))
+            print("tau={}, fpr={}, fnr={}".format(best_fnr_tau, fpr(best_fnr_tau), best_fnr))
             return best_fnr_tau
         
     def train(self, xs, ys, epochs):
