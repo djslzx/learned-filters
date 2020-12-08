@@ -10,9 +10,12 @@ class Net(nn.Module):
         Simple Neural Net with 1 hidden layer
         """
         super(Net, self).__init__()
-        hidden_size = (n+1)//2  # Use avg of 2 layer sizes
-        self.w1 = nn.Linear(n, hidden_size)  
-        self.w2 = nn.Linear(hidden_size, 1)
+        self.input_size = n
+        self.hidden_size = (n+1)//2  # Use avg of 2 layer sizes
+        self.output_size = 1
+
+        self.w1 = nn.Linear(self.input_size, self.hidden_size)  
+        self.w2 = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, x):
         """
@@ -55,6 +58,10 @@ class Net(nn.Module):
         T.save(self.state_dict(), "Model")
         print('Finished Training')
 
+    def __str__(self):
+        return ("{} input nodes, {} hidden nodes, {} output nodes"
+                .format(self.input_size, self.hidden_size, self.output_size))
+
 class WordNet():
     
     def __init__(self, n, c):
@@ -71,6 +78,10 @@ class WordNet():
 
     def __call__(self, x):
         return self.net(x.model_type)
+
+    def __str__(self):
+        return ("n={}, c={}, net: {}"
+                .format(self.n, self.c, self.net))
 
 
 if __name__ == '__main__':

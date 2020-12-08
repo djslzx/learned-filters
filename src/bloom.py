@@ -1,5 +1,5 @@
 from bitarray import bitarray
-from math import log, log2
+from math import log, log2, exp
 import mmh3 
 
 class Bloom:
@@ -11,35 +11,31 @@ class Bloom:
       - `k` hash functions
     """
 
-    @classmethod
-    def get_m(self, n, e):
-        """
-        Compute m, the size of the bit array
-
-        m = (n * lg(1/e))/ln(2)
-        """
-        m = (n * -log2(e))/log(2)
-        return int(m)
-    
-    @classmethod
-    def get_k(self, n, e):
-        """
-        Compute k, the number of hash functions to use
-
-        k = lg(1/e)
-        """
-        k = -log2(e)
-        return int(k)
-
     # TODO: change to take in given size,
     # figure out other params based on that
-    def __init__(self, n, e):
+
+    def __init__(self, n):
         self.n = n
-        self.e = e
-        self.m = Bloom.get_m(n, e)
-        self.k = Bloom.get_k(n, e)
-        self.bits = bitarray(self.m)
-        self.bits.setall(0)
+
+    @classmethod
+    def init_ne(cls, n, err):
+        b = Bloom(n)
+        b.err = err
+        b.m = Bloom.get_m(n,err)
+        b.k = Bloom.get_k(n, b.m)
+        b.bits = bitarray(b.m)
+        b.bits.setall(0)
+        return b
+
+    @classmethod
+    def init_nm(cls, n, m): 
+        b = Bloom(n)
+        b.m = m
+        b.k = Bloom.get_k(n, m)
+        b.err = 1 - exp(-b.k * b.n/b.m) ** b.k
+        b.bits = bitarray(b.m)
+        b.bits.setall(0)
+        return b
 
     def add(self, x):
         """
@@ -61,16 +57,34 @@ class Bloom:
                 return False
         return True
 
+    @classmethod
+    def get_m(self, n, err):
+        """
+        Compute m, the size of the bit array
+
+        m = (n * lg(1/e))/ln(2)
+        """
+        m = (n * -log2(err))/log(2)
+        return int(m)
+    
+    @classmethod
+    def get_k(self, n, m):
+        """
+        Compute k, the number of hash functions to use
+
+        k = m/n * ln(2)
+        """
+        k = m/n * log(2)
+        return int(k)
+
     def __str__(self):
-        return ("n={}, e={}, m={}, k={}"
-                .format(self.n, self.e, self.m, self.k))
+        return ("n={}, err={}, m={}, k={}"
+                .format(self.n, self.err, self.m, self.k))
 
 class WordBloom:
     
-    def __init__(self, n, e):
-        self.n = n
-        self.e = e
-        self.bloom = Bloom(n,e)
+    def __init__(self, bloom):
+        self.bloom = bloom
 
     def add_set(self, elts):
         """

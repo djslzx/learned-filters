@@ -10,7 +10,7 @@
 """
 
 import torch as T
-from bloom import WordBloom
+from bloom import WordBloom, Bloom
 from model import WordNet
 from util import ilen
 
@@ -63,8 +63,7 @@ class Toast:
                 best_fpr = fp_rate
             if fp_rate < self.err/2:
                 candidates.append(tau)
-
-        print(candidates)
+        # print(candidates)
 
         # If no tau has fpr < err/2, choose tau with best fpr
         if not candidates:
@@ -97,7 +96,7 @@ class Toast:
         
         # Build filter for negatives
         if len(false_negs) > 0:
-            self.amq = WordBloom(len(false_negs), self.err/2)
+            self.amq = WordBloom(Bloom.init_ne(len(false_negs), self.err/2))
             self.amq.add_set(false_negs)
 
     def contains(self, x):

@@ -68,6 +68,24 @@ Take matrices, count num elts, mult by size of individual elt
 - neural net hyperparams
 - ML model
 
+## Notes about Sandiwch
+Size of 2nd amq:
+```
+b_2 = F_n * log_{alpha} F_p / ((1-F_p)(1/F_n - 1))
+
+2nd amq should use b_2/F_n bits per elt
+
+So we should use 
+
+log_{alpha} F_p / ((1-F_p)(1/F_n - 1))
+
+log_alpha(x) = -lg(x)/ln(2)
+
+log_{alpha} F_p/((1-F_p)(1/F_n - 1))
+
+m_2 = -lg(F_p/((1-F_p)(1/F_n - 1)))/ln(2)
+```
+
 
 ## Lingering questions
 - How much do we train the neural net / pre-filter?
