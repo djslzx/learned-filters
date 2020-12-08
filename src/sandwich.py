@@ -1,25 +1,28 @@
 import torch as T
 from bloom import Bloom, WordBloom
 from model import WordNet
-from math import log
+from math import log, log2
+from util import ilen
 
 class Sandwich:
 
-    def __init__(self, n, c, err, b_1=4):
+    def __init__(self, n, c, err, b1=4):
         """
         n: number of letters in string
         c: size of alphabet
         err: total error rate of sandwich
-        b_1: the amount of space to use for the first bloom filter
+        b1: the amount of space to use for the first bloom filter
         """
         self.n = n
         self.c = c
+        self.b1 = b1
+
         self.model = WordNet(n, c)
         self.tau = 0.5 # default value, adjust by tuning later
         self.alpha = 0.618503137801576 # 2 ** -log(2)
 
         # AMQs can only be set up after training model
-        self.amq1 = WordBloom(Bloom.init_ne(n, err*b_1))
+        self.amq1 = WordBloom(Bloom.init_ne(n, err*b1))
         self.amq2 = None # Determine size after training
         self.err = err
 
@@ -63,7 +66,7 @@ class Sandwich:
         # If no tau has fpr < err/2, choose tau with best fpr
         if not candidates:
             print("tau={}, fpr={}, fnr={}".format(best_fpr_tau, best_fpr, fnr(best_fpr_tau)))
-            return best_fpr_tau
+            return best_fpr_tau, fpr(best_fpr_tau), fnr(best_fnr_tau)
         # Otherwise, choose tau in candidates with best fnr
         else:
             best_fnr_tau = candidates[0]
@@ -74,7 +77,7 @@ class Sandwich:
                     best_fnr_tau = tau
                     best_fnr = fn_rate
             print("tau={}, fpr={}, fnr={}".format(best_fnr_tau, fpr(best_fnr_tau), best_fnr))
-            return best_fnr_tau
+            return best_fnr_tau, fnr(best_fnr_tau), fnr(best_fnr_tau)
 
 
     def train(self, xs, ys, epochs):
@@ -90,14 +93,14 @@ class Sandwich:
         self.amq1.add_set(positives)
         
         # Train the neural net on reported positives of first filter
-        amq1_pos_indices = [i for i,x in enumerate(xs) if self.amq.contains(x)]
+        amq1_pos_indices = [i for i,x in enumerate(xs) if self.amq1.contains(x)]
         amq1_pos_xs = [xs[i] for i in amq1_pos_indices]
         amq1_pos_ys = [ys[i] for i in amq1_pos_indices]
 
         self.model.train(amq1_pos_xs, amq1_pos_ys, epochs)
 
         # Tune tau
-        self.tau = self._choose_tau(amq1_pos_xs, amq1_pos_ys)
+        self.tau, fpr, fnr = self._choose_tau(amq1_pos_xs, amq1_pos_ys)
 
         # Get false negatives from model
         model_false_negs = [x for x in amq1_pos_xs
@@ -106,28 +109,12 @@ class Sandwich:
         
         # Setup second filter if we have false negs
         if num_model_false_negs > 0:
-            # Get the examples that were given to the model that were actually negatives
-            # and count how many were classified as positive
-            
-
-            num_model_false_pos = ilen(x for x,y in zip(amq1_pos_xs, amq1_pos_ys)
-                                       if (not y) and (self.model(x) > self.tau))
-
-            # Count the total number of examples given to the model 
-            # (i.e, reported positives for amq1)
-            num_model_input = len(amq1_pos_ys)
-            # Count the number of 1s of exs given to model
-            num_pos_in_model_input = sum(amq1_pos_ys)
-            # Compute number of 0s of exs given to model
-            num_neg_in_model_input = num_model_input - num_pos_in_model_input
-
-            fpr = num_model_false_pos / num_neg_in_model_input
-            fnr = num_model_false_negs / num_pos_in_model_input
-
             # Compute optimal bitarray size ratio for second filter
-            m2 = -log2(fpr/((1-fpr)*(1/fnr - 1)))/log(2)
+            inside = fpr/((1-fpr)*(1/fnr - 1))
+            m2 = 0 if inside == 0 else -log2(inside)/log(2)
+            print(m2)
             self.amq2 = WordBloom(Bloom.init_nm(num_model_false_negs, m2))
-            self.amq.add_set(model_false_negs)
+            self.amq2.add_set(model_false_negs)
 
     def contains(self, x):
         # Check the first filter
@@ -146,28 +133,6 @@ class Sandwich:
         return self.amq2.contains(x)
 
     def __str__(self):
-        return ("n={}, c={}, err={}, b_1={}, amq1: {}, model: {}, amq2: {}"
-                .format(self.n, self.c, self.err, self.b_1,
+        return ("n={}, c={}, err={}, b1={}, amq1: {}, model: {}, amq2: {}"
+                .format(self.n, self.c, self.err, self.b1,
                         self.amq1, self.model, self.amq2))
-
-
-    def __init__(self, n, c, err, b_1=4):
-        """
-        n: number of letters in string
-        c: size of alphabet
-        err: total error rate of sandwich
-        b_1: the amount of space to use for the first bloom filter
-        """
-        self.model = WordNet(n, c)
-        self.tau = 0.5 # default value, adjust by tuning later
-        self.alpha = 0.618503137801576 # 2 ** -log(2)
-
-        # AMQs can only be set up after training model
-        self.amq1 = WordBloom(Bloom.init_ne(n, err*b_1))
-        self.amq2 = None # Determine size after training
-        self.err = err
-
-
-
-
-        pass

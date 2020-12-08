@@ -111,8 +111,8 @@ def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
-def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, b_1, epochs):
-    sandwich = Sandwich(n, c, err, b_1)
+def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, b1, epochs):
+    sandwich = Sandwich(n, c, err, b1)
     print(sandwich)
 
     print("Training sandwich...")
@@ -156,5 +156,5 @@ if __name__ == '__main__':
     # toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
     # print("Done")
     print("Running sandwich test...")
-    sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, b_1=4, epochs=epochs)
+    sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, b1=4, epochs=epochs)
     print("Done")
