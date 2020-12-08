@@ -17,7 +17,7 @@ def make_uniform_exs(num_exs, n, c):
     
 def make_sum_exs(num_exs, n, c):
     """
-    Generate examples that are linearly separable
+    Generate examples that are linearly separable based on element-wise sum
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []
@@ -31,7 +31,7 @@ def make_sum_exs(num_exs, n, c):
 
 def make_parity_exs(num_exs, n, c):
     """
-    Generate examples that are checkerboard-like
+    Generate examples that are checkerboard-like based on parity
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []
@@ -45,7 +45,7 @@ def make_parity_exs(num_exs, n, c):
 
 def make_circle_exs(num_exs, n, c):
     """
-    Generate examples that are linearly separable
+    Generate examples that are linearly separable based on a circle
     """
     xs = [Word(n, c) for _ in range(num_exs)]
     ys = []
@@ -53,7 +53,7 @@ def make_circle_exs(num_exs, n, c):
     center = T.tensor([half_len, half_len])
     for x in xs:
         tensor = x.data
-        label = float(T.dist(T.sum(tensor), center)) < half_len/4
+        label = float(T.dist(T.sum(tensor), center)) > half_len/4
         ys.append(label)
 
     return xs, ys
@@ -108,15 +108,15 @@ def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
  
 if __name__ == '__main__':
-    num_exs = 1000
-    epochs = 100
-    n=5
-    c=10
+    num_exs = 10000
+    epochs = 69
+    n=20
+    c=26
 
     # xs, ys = make_uniform_exs(num_exs, n, c)
-    xs, ys = make_sum_exs(num_exs, n, c)
+    # xs, ys = make_sum_exs(num_exs, n, c)
     # xs, ys = make_parity_exs(num_exs, n, c)
-    # xs, ys = make_circle_exs(num_exs, n, c)
+    xs, ys = make_circle_exs(num_exs, n, c)
     num_pos = ilen(x for x,y in zip(xs,ys) if y)
     num_neg = ilen(x for x,y in zip(xs,ys) if not y)
 
