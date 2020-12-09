@@ -11,53 +11,70 @@ def make_uniform_exs(num_exs, n, c):
     Generate examples that are uniformly randomly labeled
     """
     xs = [Word(n, c) for _ in range(num_exs)]
-    ys = ([0 for _ in range(num_exs/2)] + 
-          [1 for _ in range(num_exs/2)])
+    ys = ([0 for _ in range(num_exs//2)] + 
+          [1 for _ in range(num_exs//2)])
 
     return xs, shuffled(ys)
     
-def make_sum_exs(num_exs, n, c):
+def make_line_exs(num_exs, n, c):
     """
     Generate examples that are linearly separable based on element-wise sum
     """
-    xs = [Word(n, c) for _ in range(num_exs)]
-    ys = []
-    for x in xs:
-        tensor = x.data
-        label = float(T.sum(tensor)) < (n*c/2)
+    words = [Word(n, c) for _ in range(num_exs)]
+    labels = []
+    for w in words:
+        label = float(T.sum(w.data)) < (n*c/2)
         # print(tensor, label)
-        ys.append(label)
+        labels.append(label)
+    return words, labels
 
-    return xs, ys
+def make_polynomial_exs(num_exs, n, c):
+    """
+    Generate examples that are separated by a randomly generated polynomial
+    """
+    # Generate coefficients in [0,c)
+    d = 3
+    coeffs = T.rand(size=(n,), dtype=T.float) - 0.5
+
+    def g(tensor):
+        """Discriminating polynomial"""
+        powers = T.pow(tensor,
+                       T.arange(start=0, end=n, dtype=T.float))
+        out = float(T.dot(powers, coeffs))
+        return out > 0
+    
+    words = [Word(n, c) for _ in range(num_exs)]
+    labels = []
+    for w in words:
+        label = g(w.data)
+        labels.append(label)
+    return words, labels
 
 def make_parity_exs(num_exs, n, c):
     """
     Generate examples that are checkerboard-like based on parity
     """
-    xs = [Word(n, c) for _ in range(num_exs)]
-    ys = []
-    for x in xs:
-        tensor = x.data
+    words = [Word(n, c) for _ in range(num_exs)]
+    labels = []
+    for w in words:
+        tensor = w.data
         label = int(T.sum(tensor)) % 2 == 0
-        # print(tensor, label)
-        ys.append(label)
-
-    return xs, ys
+        labels.append(label)
+    return words, labels
 
 def make_circle_exs(num_exs, n, c):
     """
     Generate examples that are linearly separable based on a circle
     """
-    xs = [Word(n, c) for _ in range(num_exs)]
-    ys = []
+    words = [Word(n, c) for _ in range(num_exs)]
+    labels = []
     half_len = n*c/2
     center = T.tensor([half_len, half_len])
-    for x in xs:
-        tensor = x.data
+    for w in words:
+        tensor = w.data
         label = float(T.dist(T.sum(tensor), center)) > half_len/4
-        ys.append(label)
-
-    return xs, ys
+        labels.append(label)
+    return words, labels
 
 def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
     bloom = WordBloom(Bloom.init_ne(num_pos, e))
@@ -110,9 +127,10 @@ def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
           .format(false_pos/num_neg, 
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
+    print(toast)
 
-def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, b1, epochs):
-    sandwich = Sandwich(n, c, err, b1)
+def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
+    sandwich = Sandwich(n, c, err, num_pos, err1k)
     print(sandwich)
 
     print("Training sandwich...")
@@ -129,18 +147,20 @@ def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, b1, epochs):
           .format(false_pos/num_neg, 
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
+    print(sandwich)
 
 
 if __name__ == '__main__':
     num_exs = 1000
-    epochs = 50
+    epochs = 100
     n=5
     c=10
 
     # xs, ys = make_uniform_exs(num_exs, n, c)
-    # xs, ys = make_sum_exs(num_exs, n, c)
+    # xs, ys = make_line_exs(num_exs, n, c)
     # xs, ys = make_parity_exs(num_exs, n, c)
     xs, ys = make_circle_exs(num_exs, n, c)
+    # xs, ys = make_polynomial_exs(num_exs, n, c)
     num_pos = ilen(x for x,y in zip(xs,ys) if y)
     num_neg = ilen(x for x,y in zip(xs,ys) if not y)
 
@@ -156,5 +176,5 @@ if __name__ == '__main__':
     # toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
     # print("Done")
     print("Running sandwich test...")
-    sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, b1=4, epochs=epochs)
+    sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, err1k=5, epochs=epochs)
     print("Done")

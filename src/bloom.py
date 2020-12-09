@@ -32,7 +32,7 @@ class Bloom:
         b = Bloom(n)
         b.m = m
         b.k = Bloom.get_k(n, m)
-        b.err = 1 - exp(-b.k * b.n/b.m) ** b.k
+        b.err = (1 - exp(-b.k * b.n/b.m)) ** b.k
         b.bits = bitarray(b.m)
         b.bits.setall(0)
         return b
