@@ -1,14 +1,3 @@
-"""
--- > model -yes-> user
-      |
-      no
-      |
-      v
-     filter -yes-> user
-      |
-      no-> user
-"""
-
 import torch as T
 from bloom import WordBloom, Bloom
 from model import WordNet
