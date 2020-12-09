@@ -136,7 +136,12 @@ class Sandwich:
         # Check second filter result, output directly
         return self.amq2.contains(x)
 
+    def __len__(self):
+        return (len(self.amq1) + len(self.model) + 
+                0 if self.amq2 is None else len(self.amq2))
+
     def __str__(self):
-        return ("n={}, c={}, err={}, err1={}, amq1: {}, model: {}, amq2: {}"
-                .format(self.n, self.c, self.err, self.err1,
+        return ("[Sandwich] size={}, n={}, c={}, err={}, err1={},"
+                "amq1: {}, model: {}, amq2: {}"
+                .format(len(self), self.n, self.c, self.err, self.err1,
                         self.amq1, self.model, self.amq2))

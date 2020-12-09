@@ -104,6 +104,7 @@ def model_test(xs, ys, num_pos, num_neg, n, c, epochs):
         false_pos += not y and model_contains
         false_neg += y and not model_contains
 
+    print(net)
     print("fpr: {}, fnr: {}, correct%: {}"
           .format(false_pos/num_neg, 
                   false_neg/num_pos, 
@@ -123,11 +124,11 @@ def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
         false_pos += not y and filter_contains
         false_neg += y and not filter_contains
 
+    print(toast)
     print("fpr: {}, fnr: {}, correct%: {}"
           .format(false_pos/num_neg, 
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
-    print(toast)
 
 def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
     sandwich = Sandwich(n, c, err, num_pos, err1k)
@@ -143,40 +144,45 @@ def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
         false_pos += not y and filter_contains
         false_neg += y and not filter_contains
 
+    print(sandwich)
     print("fpr: {}, fnr: {}, correct%: {}"
           .format(false_pos/num_neg, 
                   false_neg/num_pos, 
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
-    print(sandwich)
-
 
 if __name__ == '__main__':
-    num_exs = 1000
-    epochs = 100
-    n=5                         # 5-letter words
+    num_exs = 10000             # number of words to test with
+    epochs = 50                 # model training epochs
+    n=5                         # n-letter words
     c=10                        # c-letter alphabet
+    u_size = c ** n             # universe size
 
+    print("Generating examples...")
     xs = make_uniform_words(num_exs, n, c)
     # ys = label_uniform(xs)
     # ys = label_line(xs, n, c)
     # ys = label_polynomial(xs, n)
     # ys = label_parity(xs)
-    ys = label_circle(xs, n, c)
+
+    print("Labelling examples...")
+    ys = label_circle(xs, n, c) # Label examples as 1 if in circle, 0 if without
 
     num_pos = ilen(x for x,y in zip(xs,ys) if y)
     num_neg = ilen(x for x,y in zip(xs,ys) if not y)
 
-    print("pos: {}, neg: {}".format(num_pos, num_neg))
+    # U is the universe of possible queries, T is the set of negative queries
+    print("n={}, c={}, |U|={}, |K|={}, |T|={}"
+          .format(n, c, u_size, num_pos, num_neg))
 
     print("Running Bloom test...")
     bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=0.01)
     print("Done.")
-    # print("Running model test...")
-    # model_test(num_pos, num_neg, n=5, c=10, epochs=1000)
-    # print("Done.")
-    # print("Running toast test...")
-    # toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
-    # print("Done")
+    print("Running model test...")
+    model_test(xs, ys, num_pos, num_neg, n=n, c=c, epochs=epochs)
+    print("Done.")
+    print("Running toast test...")
+    toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
+    print("Done")
     print("Running sandwich test...")
     sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, err1k=5, epochs=epochs)
     print("Done")

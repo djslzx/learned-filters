@@ -77,9 +77,12 @@ class Bloom:
         k = m/n * log(2)
         return int(k)
 
+    def __len__(self):
+        return self.m
+
     def __str__(self):
-        return ("n={}, err={}, m={}, k={}"
-                .format(self.n, self.err, self.m, self.k))
+        return ("[Bloom] size={}, n={}, err={}, m={}, k={}"
+                .format(len(self), self.n, self.err, self.m, self.k))
 
 class WordBloom:
     
@@ -98,5 +101,8 @@ class WordBloom:
         """
         return self.bloom.contains(x.filter_type)
 
+    def __len__(self):
+        return len(self.bloom)
+
     def __str__(self):
-        return str(self.bloom)
+        return "[WordBloom] {}".format(self.bloom)

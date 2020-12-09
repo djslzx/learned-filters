@@ -107,5 +107,9 @@ class Toast:
         else:
             return self.amq.contains(x)
 
+    def __len__(self):
+        return len(self.model) + (0 if self.amq is None else len(self.amq))
+
     def __str__(self):
-        return "amq: {}, e={}, tau={}".format(self.amq, self.err, self.tau)
+        return ("[Toast] size={}, amq: {}, model: {}, e={}, tau={}"
+                .format(len(self), self.amq, self.model, self.err, self.tau))

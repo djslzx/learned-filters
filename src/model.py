@@ -59,7 +59,7 @@ class Net(nn.Module):
         print('Finished Training')
 
     def __str__(self):
-        return ("{} input nodes, {} hidden nodes, {} output nodes"
+        return ("{} x {} x {}"
                 .format(self.input_size, self.hidden_size, self.output_size))
 
 class WordNet():
@@ -79,10 +79,13 @@ class WordNet():
     def __call__(self, x):
         return self.net(x.model_type)
 
-    def __str__(self):
-        return ("n={}, c={}, net: {}"
-                .format(self.n, self.c, self.net))
+    def __len__(self):
+        return (self.net.input_size * self.net.hidden_size +
+                self.net.hidden_size * self.net.output_size) * 24 * 8 # float: 24 bytes
 
+    def __str__(self):
+        return ("[Model] size={}, n={}, c={}, net: {}"
+                .format(len(self), self.n, self.c, self.net))
 
 if __name__ == '__main__':
     random_data = T.rand([1,5])
