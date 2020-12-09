@@ -3,78 +3,10 @@ from model import WordNet
 from bloom import WordBloom, Bloom
 from toast import Toast
 from sandwich import Sandwich
-from util import shuffled, ilen
+from util import ilen
 import torch as T
-
-def make_uniform_exs(num_exs, n, c):
-    """
-    Generate examples that are uniformly randomly labeled
-    """
-    xs = [Word(n, c) for _ in range(num_exs)]
-    ys = ([0 for _ in range(num_exs//2)] + 
-          [1 for _ in range(num_exs//2)])
-
-    return xs, shuffled(ys)
-    
-def make_line_exs(num_exs, n, c):
-    """
-    Generate examples that are linearly separable based on element-wise sum
-    """
-    words = [Word(n, c) for _ in range(num_exs)]
-    labels = []
-    for w in words:
-        label = float(T.sum(w.data)) < (n*c/2)
-        # print(tensor, label)
-        labels.append(label)
-    return words, labels
-
-def make_polynomial_exs(num_exs, n, c):
-    """
-    Generate examples that are separated by a randomly generated polynomial
-    """
-    # Generate coefficients in [0,c)
-    d = 3
-    coeffs = T.rand(size=(n,), dtype=T.float) - 0.5
-
-    def g(tensor):
-        """Discriminating polynomial"""
-        powers = T.pow(tensor,
-                       T.arange(start=0, end=n, dtype=T.float))
-        out = float(T.dot(powers, coeffs))
-        return out > 0
-    
-    words = [Word(n, c) for _ in range(num_exs)]
-    labels = []
-    for w in words:
-        label = g(w.data)
-        labels.append(label)
-    return words, labels
-
-def make_parity_exs(num_exs, n, c):
-    """
-    Generate examples that are checkerboard-like based on parity
-    """
-    words = [Word(n, c) for _ in range(num_exs)]
-    labels = []
-    for w in words:
-        tensor = w.data
-        label = int(T.sum(tensor)) % 2 == 0
-        labels.append(label)
-    return words, labels
-
-def make_circle_exs(num_exs, n, c):
-    """
-    Generate examples that are linearly separable based on a circle
-    """
-    words = [Word(n, c) for _ in range(num_exs)]
-    labels = []
-    half_len = n*c/2
-    center = T.tensor([half_len, half_len])
-    for w in words:
-        tensor = w.data
-        label = float(T.dist(T.sum(tensor), center)) > half_len/4
-        labels.append(label)
-    return words, labels
+import argparse
+from generator import make_uniform_exs, make_polynomial_exs, make_circle_exs, make_line_exs, make_parity_exs
 
 def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
     bloom = WordBloom(Bloom.init_ne(num_pos, e))
@@ -149,8 +81,7 @@ def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
     print(sandwich)
 
-
-if __name__ == '__main__':
+def quick_test():
     num_exs = 1000
     epochs = 100
     n=5
@@ -178,3 +109,63 @@ if __name__ == '__main__':
     print("Running sandwich test...")
     sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, err1k=5, epochs=epochs)
     print("Done")
+
+def command_line():
+    p = argparse.ArgumentParser(description='Construct ')
+    p.add_argument('-f', '--filter', type=str, default="bloom", 
+                   help='filter type (bloom, toast, sandwich')
+    p.add_argument('-g', '--generator', type=str, default="uniform", 
+                   help='example generator type (uniform, line, parity, circle, polynomial')
+    p.add_argument('-s', '--size', type=int, default=1000,
+                   help='number of examples')
+    p.add_argument('-n', '--length',type=int, default = 5,
+                   help='length of example strings')
+    p.add_argument('-c', '--alphabet', type=int, default = 10,
+                   help='size of example alphabet')
+    p.add_argument('-e', '--error', type=int, default = 10,
+                   help='error rate')
+    p.add_argument('-ep', '--epochs', type=int, default = 100,
+                   help='number of epochs')
+    a = p.parse_args()
+    
+    num_exs = a.size
+    epochs = a.epoch
+    n = a.length
+    c = a.alphabet
+    err = a.error
+    xs, ys = [],[]
+
+    if a.generator is "uniform":
+        xs, ys = make_uniform_exs(num_exs, n, c)
+    elif a.generator is "line":
+        xs, ys = make_line_exs(num_exs, n, c)
+    elif a.generator is "parity":
+        xs, ys = make_parity_exs(num_exs, n, c)
+    elif a.generator is "circle":
+        xs, ys = make_circle_exs(num_exs, n, c)
+    elif a.generator is "polynomial":
+        xs, ys = make_polynomial_exs(num_exs, n, c)
+    else:
+        raise Exception("Not a valid example generator")
+
+    num_pos = ilen(x for x,y in zip(xs,ys) if y)
+    num_neg = ilen(x for x,y in zip(xs,ys) if not y)
+
+    print("pos: {}, neg: {}".format(num_pos, num_neg))
+    
+    if a.filter is "bloom":
+        print("Running Bloom test...")
+        bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=err)
+        print("Running toast test...")
+    elif a.filter is "toast":
+        toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, epochs=epochs)
+    elif a.filter is "sandwich":
+        print("Running sandwich test...")
+        sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, err1k=5, epochs=epochs)
+    else:
+        raise Exception("Not a valid filter")
+    print("Done")
+
+if __name__ == '__main__':
+    quick_test()
+    #command_line()
