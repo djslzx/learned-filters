@@ -114,7 +114,7 @@ def command_line():
     p = argparse.ArgumentParser(description='Construct ')
     p.add_argument('-f', '--filter', type=str, default="bloom", 
                    help='filter type (bloom, toast, sandwich')
-    p.add_argument('-g', '--generator', type=str, default="uniform", 
+    p.add_argument('-g', '--generator', type=str, default="circle", 
                    help='example generator type (uniform, line, parity, circle, polynomial')
     p.add_argument('-s', '--size', type=int, default=1000,
                    help='number of examples')
@@ -122,28 +122,28 @@ def command_line():
                    help='length of example strings')
     p.add_argument('-c', '--alphabet', type=int, default = 10,
                    help='size of example alphabet')
-    p.add_argument('-e', '--error', type=int, default = 10,
+    p.add_argument('-e', '--error', type=int, default = 0.01,
                    help='error rate')
     p.add_argument('-ep', '--epochs', type=int, default = 100,
                    help='number of epochs')
     a = p.parse_args()
     
     num_exs = a.size
-    epochs = a.epoch
+    epochs = a.epochs
     n = a.length
     c = a.alphabet
     err = a.error
     xs, ys = [],[]
 
-    if a.generator is "uniform":
+    if a.generator == "uniform":
         xs, ys = make_uniform_exs(num_exs, n, c)
-    elif a.generator is "line":
+    elif a.generator == "line":
         xs, ys = make_line_exs(num_exs, n, c)
-    elif a.generator is "parity":
+    elif a.generator == "parity":
         xs, ys = make_parity_exs(num_exs, n, c)
-    elif a.generator is "circle":
+    elif a.generator == "circle":
         xs, ys = make_circle_exs(num_exs, n, c)
-    elif a.generator is "polynomial":
+    elif a.generator == "polynomial":
         xs, ys = make_polynomial_exs(num_exs, n, c)
     else:
         raise Exception("Not a valid example generator")
@@ -153,19 +153,20 @@ def command_line():
 
     print("pos: {}, neg: {}".format(num_pos, num_neg))
     
-    if a.filter is "bloom":
+    if a.filter == "bloom":
         print("Running Bloom test...")
         bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=err)
         print("Running toast test...")
-    elif a.filter is "toast":
+    elif a.filter == "toast":
         toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, epochs=epochs)
-    elif a.filter is "sandwich":
+    elif a.filter == "sandwich":
         print("Running sandwich test...")
         sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, err1k=5, epochs=epochs)
     else:
+        print(a.filter)
         raise Exception("Not a valid filter")
     print("Done")
 
 if __name__ == '__main__':
-    quick_test()
-    #command_line()
+    #quick_test()
+    command_line()
