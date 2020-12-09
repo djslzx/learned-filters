@@ -6,75 +6,75 @@ from sandwich import Sandwich
 from util import shuffled, ilen
 import torch as T
 
-def make_uniform_exs(num_exs, n, c):
+def make_uniform_words(num_exs, n, c):
     """
-    Generate examples that are uniformly randomly labeled
+    Generate words uniformly randomly
     """
-    xs = [Word(n, c) for _ in range(num_exs)]
-    ys = ([0 for _ in range(num_exs//2)] + 
-          [1 for _ in range(num_exs//2)])
-
-    return xs, shuffled(ys)
+    return [Word(n, c) for _ in range(num_exs)]
     
-def make_line_exs(num_exs, n, c):
+def label_uniform(words):
+    m = len(words)
+    return ([0 for _ in range(m//2)] + 
+            [1 for _ in range(m//2)])
+
+def label_line(words, n, c):
     """
-    Generate examples that are linearly separable based on element-wise sum
+    Label examples by separating linearly based on word magnitude
     """
-    words = [Word(n, c) for _ in range(num_exs)]
     labels = []
     for w in words:
-        label = float(T.sum(w.data)) < (n*c/2)
-        # print(tensor, label)
+        tensor = w.data
+        label = float(T.sum(tensor)) < (n*c/2)
         labels.append(label)
-    return words, labels
+    return labels
 
-def make_polynomial_exs(num_exs, n, c):
+def label_polynomial(words, n):
     """
-    Generate examples that are separated by a randomly generated polynomial
+    Label examples by separating with a randomly generated polynomial
+    Note: Doesn't work too well; examples are split lopsidedly,
+    sometimes resulting in empty pos or neg sets
     """
-    # Generate coefficients in [0,c)
-    d = 3
     coeffs = T.rand(size=(n,), dtype=T.float) - 0.5
 
     def g(tensor):
-        """Discriminating polynomial"""
-        powers = T.pow(tensor,
-                       T.arange(start=0, end=n, dtype=T.float))
+        """
+        Compute g(x) for a point x and polynomial discriminator
+        defined by coeffs, and check if g(x) > 0
+        """
+        powers = T.pow(tensor, T.arange(start=0, end=n, dtype=T.float))
         out = float(T.dot(powers, coeffs))
         return out > 0
     
-    words = [Word(n, c) for _ in range(num_exs)]
     labels = []
     for w in words:
-        label = g(w.data)
+        tensor = w.data
+        label = g(tensor)
         labels.append(label)
-    return words, labels
+    return labels
 
-def make_parity_exs(num_exs, n, c):
+def label_parity(words):
     """
     Generate examples that are checkerboard-like based on parity
     """
-    words = [Word(n, c) for _ in range(num_exs)]
     labels = []
     for w in words:
         tensor = w.data
         label = int(T.sum(tensor)) % 2 == 0
         labels.append(label)
-    return words, labels
+    return labels
 
-def make_circle_exs(num_exs, n, c):
+def label_circle(words, n, c):
     """
     Generate examples that are linearly separable based on a circle
     """
-    words = [Word(n, c) for _ in range(num_exs)]
     labels = []
-    half_len = n*c/2
-    center = T.tensor([half_len, half_len])
+    z = n*c/2
+    center = T.tensor([z, z])
     for w in words:
         tensor = w.data
-        label = float(T.dist(T.sum(tensor), center)) > half_len/4
+        label = float(T.dist(T.sum(tensor), center)) > z/4
         labels.append(label)
-    return words, labels
+    return labels
 
 def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
     bloom = WordBloom(Bloom.init_ne(num_pos, e))
@@ -153,14 +153,16 @@ def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
 if __name__ == '__main__':
     num_exs = 1000
     epochs = 100
-    n=5
-    c=10
+    n=5                         # 5-letter words
+    c=10                        # c-letter alphabet
 
-    # xs, ys = make_uniform_exs(num_exs, n, c)
-    # xs, ys = make_line_exs(num_exs, n, c)
-    # xs, ys = make_parity_exs(num_exs, n, c)
-    xs, ys = make_circle_exs(num_exs, n, c)
-    # xs, ys = make_polynomial_exs(num_exs, n, c)
+    xs = make_uniform_words(num_exs, n, c)
+    # ys = label_uniform(xs)
+    # ys = label_line(xs, n, c)
+    # ys = label_polynomial(xs, n)
+    # ys = label_parity(xs)
+    ys = label_circle(xs, n, c)
+
     num_pos = ilen(x for x,y in zip(xs,ys) if y)
     num_neg = ilen(x for x,y in zip(xs,ys) if not y)
 
