@@ -100,7 +100,6 @@ class Sandwich:
         self.model.train(amq1_pos_xs, amq1_pos_ys, epochs)
 
         # Tune tau
-        print(len(amq1_pos_xs))
         self.tau, fpr, fnr = self._choose_tau(amq1_pos_xs, amq1_pos_ys)
 
         # Get false negatives from model
@@ -113,7 +112,6 @@ class Sandwich:
             # Compute optimal bitarray size ratio for second filter
             inside = fpr/((1-fpr)*(1/fnr - 1))
             m2 = int(0 if inside == 0 else -log2(inside)/log(2))
-            print(m2)
             if m2 == 0:
                 self.amq2 = WordBloom(Bloom.init_ne(num_model_false_negs, self.err))
             else:

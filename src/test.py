@@ -1,80 +1,11 @@
-from word import Word
+import torch as T
 from model import WordNet
 from bloom import WordBloom, Bloom
 from toast import Toast
 from sandwich import Sandwich
-from util import shuffled, ilen
-import torch as T
-
-def make_uniform_words(num_exs, n, c):
-    """
-    Generate words uniformly randomly
-    """
-    return [Word(n, c) for _ in range(num_exs)]
-    
-def label_uniform(words):
-    m = len(words)
-    return ([0 for _ in range(m//2)] + 
-            [1 for _ in range(m//2)])
-
-def label_line(words, n, c):
-    """
-    Label examples by separating linearly based on word magnitude
-    """
-    labels = []
-    for w in words:
-        tensor = w.data
-        label = float(T.sum(tensor)) < (n*c/2)
-        labels.append(label)
-    return labels
-
-def label_polynomial(words, n):
-    """
-    Label examples by separating with a randomly generated polynomial
-    Note: Doesn't work too well; examples are split lopsidedly,
-    sometimes resulting in empty pos or neg sets
-    """
-    coeffs = T.rand(size=(n,), dtype=T.float) - 0.5
-
-    def g(tensor):
-        """
-        Compute g(x) for a point x and polynomial discriminator
-        defined by coeffs, and check if g(x) > 0
-        """
-        powers = T.pow(tensor, T.arange(start=0, end=n, dtype=T.float))
-        out = float(T.dot(powers, coeffs))
-        return out > 0
-    
-    labels = []
-    for w in words:
-        tensor = w.data
-        label = g(tensor)
-        labels.append(label)
-    return labels
-
-def label_parity(words):
-    """
-    Generate examples that are checkerboard-like based on parity
-    """
-    labels = []
-    for w in words:
-        tensor = w.data
-        label = int(T.sum(tensor)) % 2 == 0
-        labels.append(label)
-    return labels
-
-def label_circle(words, n, c):
-    """
-    Generate examples that are linearly separable based on a circle
-    """
-    labels = []
-    z = n*c/2
-    center = T.tensor([z, z])
-    for w in words:
-        tensor = w.data
-        label = float(T.dist(T.sum(tensor), center)) > z/4
-        labels.append(label)
-    return labels
+from util import ilen
+import argparse
+import generator as gen 
 
 def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
     bloom = WordBloom(Bloom.init_ne(num_pos, e))
@@ -151,38 +82,57 @@ def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
 if __name__ == '__main__':
-    num_exs = 10000             # number of words to test with
-    epochs = 50                 # model training epochs
-    n=5                         # n-letter words
-    c=10                        # c-letter alphabet
-    u_size = c ** n             # universe size
 
-    print("Generating examples...")
-    xs = make_uniform_words(num_exs, n, c)
-    # ys = label_uniform(xs)
-    # ys = label_line(xs, n, c)
-    # ys = label_polynomial(xs, n)
-    # ys = label_parity(xs)
+    p = argparse.ArgumentParser(description='Construct ')
+    p.add_argument('-f', '--filter', type=str, default="bloom", 
+                   help='filter type (bloom, toast, sandwich)')
+    p.add_argument('-l', '--generator', type=str, default="circle", 
+                   help='example generator type (uniform, line, parity, circle, polynomial)')
+    p.add_argument('-s', '--size', type=int, default=1000,
+                   help='number of examples')
+    p.add_argument('-n', '--length',type=int, default = 5,
+                   help='length of example strings')
+    p.add_argument('-c', '--alphabet', type=int, default = 10,
+                   help='size of example alphabet')
+    p.add_argument('-e', '--error', type=int, default = 0.01,
+                   help='error rate')
+    p.add_argument('-ep', '--epochs', type=int, default = 100,
+                   help='number of epochs')
+    a = p.parse_args()
+    
+    num_exs = a.size
+    n = a.length
+    c = a.alphabet
+    u_size = c ** n
+    err = a.error
+    epochs = a.epochs
 
-    print("Labelling examples...")
-    ys = label_circle(xs, n, c) # Label examples as 1 if in circle, 0 if without
+    xs = gen.make_uniform_words(num_exs, n, c)
+    ys = {
+        "uniform": lambda xs: gen.label_uniform(xs),
+        "line": lambda xs: gen.label_line(xs, n, c),
+        "polynomial": lambda xs: gen.label_polynomial(xs, n),
+        "parity": lambda xs: gen.label_parity(xs),
+        "circle": lambda xs: gen.label_circle(xs, n, c),
+    }[a.generator](xs)
 
     num_pos = ilen(x for x,y in zip(xs,ys) if y)
     num_neg = ilen(x for x,y in zip(xs,ys) if not y)
 
-    # U is the universe of possible queries, T is the set of negative queries
     print("n={}, c={}, |U|={}, |K|={}, |T|={}"
           .format(n, c, u_size, num_pos, num_neg))
 
-    print("Running Bloom test...")
-    bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=0.01)
-    print("Done.")
-    print("Running model test...")
-    model_test(xs, ys, num_pos, num_neg, n=n, c=c, epochs=epochs)
-    print("Done.")
-    print("Running toast test...")
-    toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, epochs=epochs)
+    if a.filter == "bloom":
+        print("Running Bloom test...")
+        bloom_test(xs, ys, num_pos, num_neg, n=n, c=c, e=err)
+    elif a.filter == "toast":
+        print("Running toast test...")
+        toast_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, epochs=epochs)
+    elif a.filter == "sandwich":
+        print("Running sandwich test...")
+        sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=err, err1k=5, epochs=epochs)
+    else:
+        print(a.filter)
+        raise Exception("Not a valid filter")
     print("Done")
-    print("Running sandwich test...")
-    sandwich_test(xs, ys, num_pos, num_neg, n=n, c=c, err=0.01, err1k=5, epochs=epochs)
-    print("Done")
+
