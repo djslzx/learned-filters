@@ -52,7 +52,7 @@ We estimate the size of the machine learniing model by counting the number of el
 ## Hyperparameters
 - heuristic for choosing tau
 - training time/epochs
-- neural net hyperparams
+- neural net hyperparameters
 - ML model
 
 ## Lingering questions
