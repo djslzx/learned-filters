@@ -14,7 +14,7 @@ def label_uniform(words):
 
 def label_line(words, n, c):
     """
-    Label examples by separating linearly based on word magnitude
+    Label examples by separating linearly based on word sum magnitude
     """
     labels = []
     for w in words:

@@ -8,6 +8,9 @@ import argparse
 import generator as gen 
 
 def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
+    """
+    Perform a test on the Bloom filter
+    """
     bloom = WordBloom(Bloom.init_ne(num_pos, e))
 
     positives = [x for x,y in zip(xs,ys) if y]
@@ -26,6 +29,9 @@ def bloom_test(xs, ys, num_pos, num_neg, n, c, e):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
  
 def model_test(xs, ys, num_pos, num_neg, n, c, epochs):
+    """
+    Perform a test on the model
+    """
     net = WordNet(n, c)
     net.train(xs, ys, epochs)
 
@@ -42,6 +48,9 @@ def model_test(xs, ys, num_pos, num_neg, n, c, epochs):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
 def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
+    """
+    Perform a test on the toast learned filter
+    """
     toast = Toast(n, c, err)
     print(toast)
     
@@ -62,6 +71,9 @@ def toast_test(xs, ys, num_pos, num_neg, n, c, err, epochs):
                   1 - (false_pos + false_neg)/(num_pos + num_neg)))
 
 def sandwich_test(xs, ys, num_pos, num_neg, n, c, err, err1k, epochs):
+    """
+    Perform a test on the sandwich learned filter
+    """
     sandwich = Sandwich(n, c, err, num_pos, err1k)
     print(sandwich)
 

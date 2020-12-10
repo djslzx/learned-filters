@@ -71,6 +71,9 @@ class Toast:
             return best_fnr_tau
         
     def train(self, xs, ys, epochs):
+        """
+        Train on examples for a certain number of epochs
+        """
         # Train neural net
         # Note: torch dataloader takes care of shuffling
         self.model.train(xs, ys, epochs)
@@ -89,6 +92,9 @@ class Toast:
             self.amq.add_set(false_negs)
 
     def contains(self, x):
+        """
+        Check if x is in the filter
+        """
         # Check amq only if model reports negative and model has false negatives
         model_ans = self.model(x) > self.tau
         if model_ans or self.amq is None:

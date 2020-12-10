@@ -119,6 +119,9 @@ class Sandwich:
             self.amq2.add_set(model_false_negs)
 
     def contains(self, x):
+        """
+        Check if x is in the filter
+        """
         # Check the first filter
         # Return output if negative, otherwise continue
         amq1_result = self.amq1.contains(x)

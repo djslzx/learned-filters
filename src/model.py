@@ -70,6 +70,9 @@ class WordNet():
         self.net = Net(n*c)
 
     def train(self, xs, ys, epochs):
+        """
+        Train on examples for a certain number of epochs
+        """
         # Reformat xs from list of Words to 2D tensor 
         train_xs = T.stack([x.model_type for x in xs])
         # Reformat ys from list of 1/0s to column tensor

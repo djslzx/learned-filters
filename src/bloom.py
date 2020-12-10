@@ -19,6 +19,9 @@ class Bloom:
 
     @classmethod
     def init_ne(cls, n, err):
+        """
+        Initialize using number of elements and error 
+        """
         b = Bloom(n)
         b.err = err
         b.m = Bloom.get_m(n,err)
@@ -29,6 +32,9 @@ class Bloom:
 
     @classmethod
     def init_nm(cls, n, m): 
+        """
+        Initialize using number of elemnts and size of bitarray 
+        """
         b = Bloom(n)
         b.m = m
         b.k = Bloom.get_k(n, m)
